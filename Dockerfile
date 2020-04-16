@@ -1,5 +1,5 @@
 # lapis builder image
-FROM golang:latest as builder
+FROM golang:1.13 as builder
 LABEL maintainer "plainbanana <kazukidegozaimasuruzo@gmail.com>"
 ENV CGO_ENABLED=0
 ENV GOOS=linux
