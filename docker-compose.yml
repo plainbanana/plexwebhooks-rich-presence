@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+
+  plexwebhooks-rich-presence:
+    restart:  always
+    build:  .
+    image:  plainbanana/webhook
+    env_file: .env
+    networks:
+      - external_network
+    ports:
+      - "127.0.0.1:12300:8080"
+
+networks:
+  external_network:
