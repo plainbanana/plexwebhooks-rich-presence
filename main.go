@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/ananagame/rich-go/client"
+	"github.com/caseymrm/menuet"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 var id string
@@ -19,6 +21,15 @@ type mydiscord struct {
 	lastUpdate time.Time
 	logined    bool
 	mu         sync.Mutex
+}
+
+func init() {
+	if os.Getenv("NODOTENV") == "" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Panicln(err)
+		}
+	}
 }
 
 func main() {
@@ -38,6 +49,17 @@ func main() {
 			time.Sleep(time.Second * 10)
 		}
 	}()
+
+	go app()
+
+	menuet.App().RunApplication()
+}
+
+func app() {
+	menuet.App().SetMenuState(&menuet.MenuState{
+		Title: "PlexRPC",
+	})
+	menuet.App().Label = "com.github.plainbanana.plexwebhooks-rich-presence.v1"
 
 	r := gin.Default()
 	r.POST("/", plexWebHook)
@@ -65,11 +87,13 @@ func plexWebHook(c *gin.Context) {
 	if (nowPlaying.Event == "media.play" || nowPlaying.Event == "media.resume") && nowPlaying.Metadata.Type == "track" {
 		err := client.SetActivity(client.Activity{
 			State:   nowPlaying.Metadata.Title,
-			Details: nowPlaying.Metadata.ParentTitle,
+			Details: nowPlaying.Metadata.ParentTitle + " - " + nowPlaying.Metadata.GrandparentTitle,
 		})
 		if err != nil {
 			panic(err)
 		}
+		log.Println(nowPlaying.Metadata.ParentTitle + " - " + nowPlaying.Metadata.GrandparentTitle)
+		dc.update()
 	}
 }
 
@@ -78,6 +102,12 @@ func (d *mydiscord) logout() {
 	defer d.mu.Unlock()
 	d.logined = false
 	client.Logout()
+}
+
+func (d *mydiscord) update() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.lastUpdate = time.Now()
 }
 
 func (d *mydiscord) login() {
@@ -114,4 +144,5 @@ type discord interface {
 	logout()
 	isLogin() bool
 	isOld() bool
+	update()
 }
